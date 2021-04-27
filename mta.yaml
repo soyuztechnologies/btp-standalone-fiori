@@ -1,0 +1,94 @@
+_schema-version: "3.2"
+ID: ibm-sd-material-fioriextension
+description: www.anubhavtrainings.com
+version: 0.0.1
+modules:
+- name: ibm-sd-material-fioriextension-dest-content
+  type: com.sap.application.content
+  requires:
+  - name: ibm-sd-material-fioriextension-dest-srv
+    parameters:
+      content-target: true
+  - name: ibm-sd-material-fioriextension-repo-host
+    parameters:
+      service-key:
+        name: ibm-sd-material-fioriextension-repo-host-key
+  - name: ibm-sd-material-fioriextension-uaa
+    parameters:
+      service-key:
+        name: ibm-sd-material-fioriextension-uaa-key
+  parameters:
+    content:
+      instance:
+        destinations:
+        - Name: ibm-sd-material-fioriextension_repo_host
+          ServiceInstanceName: ibm-sd-material-fioriextension-html5-srv
+          ServiceKeyName: ibm-sd-material-fioriextension-repo-host-key
+          sap.cloud.service: ibm-sd-material-fioriextension
+        - Authentication: OAuth2UserTokenExchange
+          Name: ibm-sd-material-fioriextension_uaa
+          ServiceInstanceName: ibm-sd-material-fioriextension-xsuaa-srv
+          ServiceKeyName: ibm-sd-material-fioriextension-uaa-key
+          sap.cloud.service: ibm-sd-material-fioriextension
+        existing_destinations_policy: ignore
+  build-parameters:
+    no-source: true
+- name: ibm-sd-material-fioriextension-app-content
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: ibm-sd-material-fioriextension-repo-host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - ibmsdmaterialfioriextension.zip
+      name: ibmsdmaterialfioriextension
+      target-path: resources/
+- name: ibmsdmaterialfioriextension
+  type: html5
+  path: .
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+resources:
+- name: ibm-sd-material-fioriextension-dest-srv
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      HTML5Runtime_enabled: true
+      init_data:
+        instance:
+          destinations:
+          - Authentication: NoAuthentication
+            Name: ui5
+            ProxyType: Internet
+            Type: HTTP
+            URL: https://ui5.sap.com
+          existing_destinations_policy: update
+      version: 1.0.0
+    service: destination
+    service-name: ibm-sd-material-fioriextension-dest-srv
+    service-plan: lite
+- name: ibm-sd-material-fioriextension-uaa
+  type: org.cloudfoundry.managed-service
+  parameters:
+    path: ./xs-security.json
+    service: xsuaa
+    service-name: ibm-sd-material-fioriextension-xsuaa-srv
+    service-plan: application
+- name: ibm-sd-material-fioriextension-repo-host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-name: ibm-sd-material-fioriextension-html5-srv
+    service-plan: app-host
+parameters:
+  deploy_mode: html5-repo
+  enable-parallel-deployments: true
